@@ -14,14 +14,18 @@
   (let [rule* (clojure.string/replace rule "contain" ",")
         sections (into [] (map #(split % #" ") (map trim (split rule* #","))))
         rbag (into [] (take 2 (first sections)))]
-    {:rbag (join " " rbag)
-     :contains (if (= "no" (first (second sections)))
+    (if (= "no" (first (second sections)))
                  nil
-                 (into [] (map (fn [s] {:num (Integer/parseInt (first s))
-                                        :color (str (get s 1) " " (get s 2))}) (drop 1 sections))))}))
+                 (into {} (map (fn [s] [(str (get s 1) " " (get s 2)) (Integer/parseInt (first s))])
+                               (drop 1 sections))))))
 
 (defn parse-rules [input]
-  (map parse-rule (split-lines input)))
+  (into {}
+        (map (fn [r]
+               (let [fc (take 2 (split r #" "))
+                     this-col (str (first fc) " " (second fc))]
+                 [this-col (parse-rule r)]))
+             (split-lines input))))
 
 (def part1-count (atom 0))
 (def colors-examined (atom {}))
@@ -34,23 +38,35 @@
   (let [co (filter #(not (contains? colors-ex (:color %))) (:contains rule))]
     (seq co)))
 
+(defn solve-1** [cc sc rule rules acc]
+  (if (nil? rule)
+    acc
+    (reduce (fn [accb c]
+           (let [nr (first (filter #(= (first %) (first c)) rules))
+                 nacc (if (= (first c) sc) (inc accb) accb)]
+             (solve-1** (first c) sc nr rules nacc))) acc (second rule))))
+
 (defn solve-1* [rules color]
-  ;(clojure.pprint/pprint rules)
-  (println @colors-examined)
-  (if (contains? @colors-examined color)
-    (println "NOPE")
-    (let [;direct (filter (fn [r] (= color (:rbag r))) rules)
-          n (filter #(color-ex % @colors-examined) rules)
-          n1 (filter #(rule-contains? % color) n)]
-      ;(println (count direct))
-      ;(println (count n1))
-      (swap! colors-examined #(assoc % color true))
-      (swap! part1-count #(+ (count n1) %))
-      (if (> (count n1) 0)
-        (seq (map (fn [n2] (solve-1* rules (:rbag n2))) n1))))))
+  (reduce (fn [acc r]
+            (let [rs (if (> (solve-1** (first r) color r rules 0) 0) 1 0)]
+              (println (str (first r) ": " rs))
+              (+ acc rs))) 0 rules))
+
+(def sample2 "shiny gold bags contain 2 dark red bags.\ndark red bags contain 2 dark orange bags.\ndark orange bags contain 2 dark yellow bags.\ndark yellow bags contain 2 dark green bags.\ndark green bags contain 2 dark blue bags.\ndark blue bags contain 2 dark violet bags.\ndark violet bags contain no other bags.\n")
 
 (defn solve-1 [input color]
-  (reset! part1-count 0)
-  (reset! colors-examined {})
-  (solve-1* (parse-rules input) color)
-  (println @part1-count))
+  (println (solve-1* (parse-rules input) color)))
+
+(defn solve-2* [sr rules acc]
+  (if (nil? sr)
+    acc
+    (reduce (fn [accb b]
+              (let [nb (second b)
+                    nr (first (filter #(= (first %) (first b)) rules))]
+                (+ accb (* nb (solve-2* nr rules accb))))) 1 (second sr))))
+
+(defn solve-2 [input color]
+  (let [rules (parse-rules input)
+        start-rule (first (filter #(= (first %) color) rules))]
+    (dec (solve-2* start-rule rules 1))))
+
