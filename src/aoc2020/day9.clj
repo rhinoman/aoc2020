@@ -23,10 +23,6 @@
         x
         (recur (inc idx))))))
 
-(defn attempt-sum [data goal]
-  (loop [start-idx 0]
-    ))
-
 (defn find-sum-set [data plength]
   (let [goal (solve-part1 data plength)]
     (loop [numt 1
