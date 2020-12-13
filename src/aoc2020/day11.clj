@@ -144,7 +144,7 @@
     (loop [iteration 0
            current-seating seating]
       (reset! changes 0)
-      (println (str "ITERATION: " iteration))
+      ;(println (str "ITERATION: " iteration))
       (let [updated-seating (apply-rules current-seating)]
         (if (= @changes 0)
           (do (println (str "FINAL NUM ITERATIONS: " iteration))
@@ -162,7 +162,7 @@
     (loop [iteration 0
            current-seating seating]
       (reset! changes 0)
-      (println (str "ITERATION: " iteration))
+      ;(println (str "ITERATION: " iteration))
       (let [updated-seating (apply-rules-2 current-seating limits)]
         ;(print-grid updated-seating limits)
         (if (= @changes 0)
